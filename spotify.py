@@ -3,6 +3,9 @@ import requests
 import json
 import time
 
+with open('secret') as f:
+    secret = f.read()
+
 
 def register_user(code):
     if code == None:
@@ -13,7 +16,7 @@ def register_user(code):
         "code": code,
         "redirect_uri": "http://localhost/callback"
     }, headers={
-        "Authorization": "Basic OWFlZmYxNjg5NTZkNGM1ZTliMGNmYTFjMjQ2ZDEwZGQ6NWNhNTU2MTY3ZjYzNGMxZWI5NzM1Njk1MTc0MGMzOTk="
+        "Authorization": "Basic " + secret
     })
 
     if r.status_code != 200:
@@ -31,8 +34,9 @@ def register_user(code):
         return False
 
     obj = json.loads(r.text)
+
     name = obj.get('display_name')
-    email = obj.get('email')
+    username = obj.get('id')
     url = obj['external_urls'].get('spotify')
     img = obj['images']
     if len(img):
@@ -40,63 +44,172 @@ def register_user(code):
     else:
         img = None
 
-    ddbb.query("UPDATE user SET email=%s, name=%s, url=%s, img=%s, access=%s, refresh=%s, valid=NOW() WHERE id=1",
-               email, name, url, img, access, refresh)
+    ddbb.query("UPDATE user SET username=%s, name=%s, url=%s, img=%s, access=%s, refresh=%s, valid=NOW() WHERE id=1",
+               username, name, url, img, access, refresh)
     return True
 
 
-def get_token(user):
-    q = ddbb.queryone("SELECT access, refresh, valid FROM user WHERE id=1")
+def get_friends(user):
+    q = ddbb.query(
+        "SELECT id, name, url, img, access, refresh, valid FROM user WHERE id IN (SELECT friend FROM friends WHERE user=%s)", user)
 
-    if q[2] == None:
+    if not len(q):
+        return []
+
+    friends = []
+    for friend in q:
+        token = friend[4]
+        if (time.time() - friend[6].timestamp()) > 3500 and friend[5] != None:
+            url = "https://accounts.spotify.com/api/token"
+            r = requests.post(url, data={
+                "grant_type": "refresh_token",
+                "refresh_token": friend[5],
+            }, headers={
+                "Authorization": "Basic " + secret
+            })
+
+            if r.status_code == 200:
+                token = json.loads(r.text).get('access_token')
+                ddbb.query(
+                    "UPDATE user SET access=%s, valid=NOW() WHERE id=%s", token, friend[0])
+            else:
+                continue
+        friends.append({
+            'id': friend[0],
+            'name': friend[1],
+            'url': friend[2],
+            'img': friend[3],
+            'token': token
+        })
+
+    return friends
+
+
+def get_friends_listening(user):
+    r = []
+
+    for friend in get_friends(1):
+
+        playing = requests.get("https://api.spotify.com/v1/me/player/currently-playing", headers={
+            'Authorization': "Bearer " + friend['token']
+        })
+
+        if playing.status_code != 200:
+            return None
+
+        playing = json.loads(playing.text)
+
+        r.append({
+            'timestamp': playing.get("timestamp"),
+            'progress_ms': playing.get("progress_ms"),
+            'is_playing': playing.get("is_playing"),
+            'name': playing["item"].get("name"),
+            'artist': playing["item"]["artists"][0].get("name"),
+            'url': playing["item"]["external_urls"].get("spotify"),
+            'album': playing["item"]["album"].get("name"),
+            'album_img': playing["item"]["album"]["images"][2].get("url"),
+            'id': friend['id'],
+            "user": friend['name'],
+            "user_url": friend['url'],
+            "user_img": friend['img']
+        })
+
+    return r
+
+
+def get_history(user):
+    q = ddbb.queryone(
+        "SELECT name, url, img, access, refresh, valid FROM user WHERE id=%s", user)
+
+    if not len(q):
         return None
 
-    if (time.time() - q[2].timestamp()) > 3500 and q[1] != None:
-        url = "https://accounts.spotify.com/api/token"
-        r = requests.post(url, data={
+    token = q[3]
+    if (time.time() - q[5].timestamp()) > 3500 and q[4] != None:
+        r = requests.post("https://accounts.spotify.com/api/token", data={
             "grant_type": "refresh_token",
-            "refresh_token": q[1],
+            "refresh_token": q[4],
         }, headers={
-            "Authorization": "Basic OWFlZmYxNjg5NTZkNGM1ZTliMGNmYTFjMjQ2ZDEwZGQ6NWNhNTU2MTY3ZjYzNGMxZWI5NzM1Njk1MTc0MGMzOTk="
+            "Authorization": "Basic " + secret
         })
 
         if r.status_code == 200:
             token = json.loads(r.text).get('access_token')
             ddbb.query(
-                "UPDATE user SET access=%s, valid=NOW() WHERE id=1", token)
-            return token
-        return None
+                "UPDATE user SET access=%s, valid=NOW() WHERE id=%s", token, user)
+        else:
+            return None
 
-    return q[0]
-
-
-def get_playing(user):
-    token = get_token(user)
-    print(token)
-    if token == None:
-        return None
-
-    r = requests.get("https://api.spotify.com/v1/me/player/currently-playing", headers={
+    history = requests.get("https://api.spotify.com/v1/me/player/recently-played?limit=5", headers={
         'Authorization': "Bearer " + token
     })
 
-    if r.status_code != 200:
+    if history.status_code != 200:
         return None
 
-    obj = json.loads(r.text)
+    history = json.loads(history.text)
 
-    obj = {
-        'timestamp': obj.get("timestamp"),
-        'progress_ms': obj.get("progress_ms"),
-        'is_playing': obj.get("is_playing"),
-        'name': obj["item"].get("name"),
-        'artist': obj["item"]["artists"][0].get("name"),
-        'url': obj["item"]["external_urls"].get("spotify"),
-        'album': obj["item"]["album"].get("name"),
-        'album_img': obj["item"]["album"]["images"][2].get("url"),
-        "user": "efrenbg1",
-        "user_img": "https://i.scdn.co/image/ab6775700000ee856a1dfd7523ae4a01de83597a",
-        "user_url": "https://open.spotify.com/user/efrenbg1"
+    r = {
+        'name': q[0],
+        'url': q[1],
+        'img': q[2],
+        'history': []
     }
-    return obj
-    # "currently_playing_type": "track",
+    for song in history.get('items'):
+        r['history'].append({
+            'name': song["track"].get("name"),
+            'artist': song["track"]["artists"][0].get("name"),
+            'url': song["track"]["external_urls"].get("spotify"),
+            'album': song["track"]["album"].get("name"),
+            'album_img': song["track"]["album"]["images"][2].get("url"),
+        })
+    return r
+
+
+def get_songs(user):
+    q = ddbb.queryone(
+        "SELECT name, url, img, access, refresh, valid FROM user WHERE id=%s", user)
+
+    if not len(q):
+        return None
+
+    token = q[3]
+    if (time.time() - q[5].timestamp()) > 3500 and q[4] != None:
+        r = requests.post("https://accounts.spotify.com/api/token", data={
+            "grant_type": "refresh_token",
+            "refresh_token": q[4],
+        }, headers={
+            "Authorization": "Basic " + secret
+        })
+
+        if r.status_code == 200:
+            token = json.loads(r.text).get('access_token')
+            ddbb.query(
+                "UPDATE user SET access=%s, valid=NOW() WHERE id=%s", token, user)
+        else:
+            return None
+
+    history = requests.get("https://api.spotify.com/v1/me/tracks?limit=5", headers={
+        'Authorization': "Bearer " + token
+    })
+
+    if history.status_code != 200:
+        return None
+
+    history = json.loads(history.text)
+
+    r = {
+        'name': q[0],
+        'url': q[1],
+        'img': q[2],
+        'songs': []
+    }
+    for song in history.get('items'):
+        r['songs'].append({
+            'name': song["track"].get("name"),
+            'artist': song["track"]["artists"][0].get("name"),
+            'url': song["track"]["external_urls"].get("spotify"),
+            'album': song["track"]["album"].get("name"),
+            'album_img': song["track"]["album"]["images"][2].get("url"),
+        })
+    return r

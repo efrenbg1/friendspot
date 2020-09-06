@@ -43,6 +43,21 @@
             outline: 0;
         }
 
+        .btn-play-sm {
+            color: #fff;
+            background-color: #1db954;
+            border-radius: 500px;
+            height: 40px !important;
+            width: 40px !important;
+            min-width: 40px !important;
+            font-size: 20px;
+            border-width: 0px;
+        }
+
+        .btn-play-sm:focus {
+            outline: 0;
+        }
+
         .bi-headphones {
             animation: spin 4s ease infinite;
         }
@@ -73,6 +88,21 @@
         </div>
     </div>
 
+    <div class="modal" id="modal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header" id="modal_title">
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <ul class="list-group list-group-flush mx-1 w-100" id="modal_list">
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Optional JavaScript -->
     <!-- jQuery first, then Popper.js, then Bootstrap JS -->
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"
@@ -85,36 +115,81 @@
         integrity="sha384-B4gt1jrGC7Jh4AgTPSdUtOBvfO8shuf57BaghqFfPlYxofvL8/KUEfYiJOMMV+rV"
         crossorigin="anonymous"></script>
     <script>
-        function playing() {
+        function req(url, callback) {
             let req = new XMLHttpRequest();
-            var url = '/listening';
             req.open('GET', url, true);
             req.responseType = 'json';
             req.onreadystatechange = function () {
                 if (req.readyState == 4) {
-                    if (req.status == 200) {
-                        var r = req.response;
-                        r.state_img = r.is_playing ? playing : pause;
-                        r.state = r.is_playing ? 'Listening right now' : 'On pause';
-                        console.log(req.status, r)
-                        document.getElementById('grid').innerHTML = card.render(r);
-                    } else {
-                        console.log(req.status);
-                    }
+                    console.log(req.response);
+                    callback(req.status, req.response);
                 }
             }.bind(this);
             req.send();
         }
 
+        function playing() {
+            req('/listening', function (status, response) {
+                if (status == 200) {
+                    var html = "";
+                    response.forEach((r) => {
+                        r.state_img = r.is_playing ? playing : pause;
+                        r.state = r.is_playing ? 'Listening right now' : 'On pause';
+                        html += card.render(r);
+                    });
+                    document.getElementById('grid').innerHTML = html;
+                } else {
+                    console.log(status);
+                }
+            });
+        }
+
         playing();
+
+
+        function history() {
+            req('/history', function (status, response) {
+                if (status == 200) {
+                    console.log(response);
+                    var html = "";
+                    response.title = "'s last 5 played tracks"
+                    response.history.forEach((r) => {
+                        html += song_entry.render(r);
+                    });
+                    document.getElementById('modal_list').innerHTML = html;
+                    document.getElementById('modal_title').innerHTML = modal_title.render(response);
+                    $('#modal').modal({ show: true });
+                } else {
+                    console.log(status);
+                }
+            });
+        }
+
+
+        function songs() {
+            req('/songs', function (status, response) {
+                if (status == 200) {
+                    console.log(response);
+                    var html = "";
+                    response.title = "'s last 5 favorite tracks";
+                    response.songs.forEach((r) => {
+                        html += song_entry.render(r);
+                    });
+                    document.getElementById('modal_list').innerHTML = html;
+                    document.getElementById('modal_title').innerHTML = modal_title.render(response);
+                    $('#modal').modal({ show: true });
+                } else {
+                    console.log(status);
+                }
+            });
+        }
 
 
         var card = `<div class="card mx-2 my-1" style="width: 100%;">
     <div class="card-body">
         <div class="row d-flex justify-content-between">
-            <div class="col-sm-2 justify-content-center my-2">
-                <img src="{{album_img}}"
-                    class="rounded mx-auto d-block" title="{{album}}">
+            <div class="col-sm-2 justify-content-center d-flex align-items-center">
+                <img src="{{album_img}}" class="rounded mx-auto d-block" title="{{album}}">
             </div>
             <div class="col-sm-8 mt-1">
                 <div class="row mx-1">
@@ -130,17 +205,47 @@
                     </h5>
                 </div>
             </div>
-            <div class="col-sm-2 mt-2 d-flex justify-content-center p-0">
-                <button type="button" class="btn-play mt-2"
-                    onclick="window.open('{{url}}', '_blank')">
+            <div class="col-sm-2 justify-content-center d-flex align-items-center">
+                <button type="button" class="btn-play" onclick="window.open('{{url}}', '_blank')">
                     <svg width="1em" height="1em" viewBox="0 0 16 16"
-                        style="margin-left: 2px !important; margin-bottom: 6.5px !important;"
-                        class="bi bi-play-fill" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                        style="margin-left: 2px !important; margin-bottom: 6.5px !important;" class="bi bi-play-fill"
+                        fill="currentColor" xmlns="http://www.w3.org/2000/svg">
                         <path
                             d="M11.596 8.697l-6.363 3.692c-.54.313-1.233-.066-1.233-.697V4.308c0-.63.692-1.01 1.233-.696l6.363 3.692a.802.802 0 0 1 0 1.393z" />
                     </svg>
                 </button>
             </div>
+        </div>
+        <div class="row d-flex justify-content-around mt-4">
+                <a class="h6" href="javascript:history()">
+                    <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-music-note-list mb-1"
+                        fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 13c0 1.105-1.12 2-2.5 2S7 14.105 7 13s1.12-2 2.5-2 2.5.895 2.5 2z" />
+                        <path fill-rule="evenodd" d="M12 3v10h-1V3h1z" />
+                        <path d="M11 2.82a1 1 0 0 1 .804-.98l3-.6A1 1 0 0 1 16 2.22V4l-5 1V2.82z" />
+                        <path fill-rule="evenodd"
+                            d="M0 11.5a.5.5 0 0 1 .5-.5H4a.5.5 0 0 1 0 1H.5a.5.5 0 0 1-.5-.5zm0-4A.5.5 0 0 1 .5 7H8a.5.5 0 0 1 0 1H.5a.5.5 0 0 1-.5-.5zm0-4A.5.5 0 0 1 .5 3H8a.5.5 0 0 1 0 1H.5a.5.5 0 0 1-.5-.5z" />
+                    </svg>
+                    History
+                </a>
+                <a class="h6" href="javascript:songs()">
+                    <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-music-note-beamed mb-1"
+                        fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                        <path
+                            d="M6 13c0 1.105-1.12 2-2.5 2S1 14.105 1 13c0-1.104 1.12-2 2.5-2s2.5.896 2.5 2zm9-2c0 1.105-1.12 2-2.5 2s-2.5-.895-2.5-2 1.12-2 2.5-2 2.5.895 2.5 2z" />
+                        <path fill-rule="evenodd" d="M14 11V2h1v9h-1zM6 3v10H5V3h1z" />
+                        <path d="M5 2.905a1 1 0 0 1 .9-.995l8-.8a1 1 0 0 1 1.1.995V3L5 4V2.905z" />
+                    </svg>
+                    Tracks
+                </a>
+                <a class="text-danger h6" href="javascript:remove()">
+                    <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-trash-fill mb-1"
+                        fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                        <path fill-rule="evenodd"
+                            d="M2.5 1a1 1 0 0 0-1 1v1a1 1 0 0 0 1 1H3v9a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V4h.5a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H10a1 1 0 0 0-1-1H7a1 1 0 0 0-1 1H2.5zm3 4a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7a.5.5 0 0 1 .5-.5zM8 5a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7A.5.5 0 0 1 8 5zm3 .5a.5.5 0 0 0-1 0v7a.5.5 0 0 0 1 0v-7z" />
+                    </svg>
+                    Remove
+                </a>
         </div>
     </div>
 </div>`;
@@ -157,6 +262,31 @@
     <path
         d="M5.5 3.5A1.5 1.5 0 0 1 7 5v6a1.5 1.5 0 0 1-3 0V5a1.5 1.5 0 0 1 1.5-1.5zm5 0A1.5 1.5 0 0 1 12 5v6a1.5 1.5 0 0 1-3 0V5a1.5 1.5 0 0 1 1.5-1.5z" />
 </svg>`;
+
+        var modal_title = `<h5 class="modal-title"><a class="text-muted" href="{{url}}" target="_blank">
+        <img src="{{img}}" style="height: 1.2em;">
+        {{name}}'s <small>{{title}}</small>
+    </a></h5>
+<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+    <span aria-hidden="true">&times;</span>
+</button>`;
+
+        var song_entry = `<li class="list-group-item d-flex justify-content-between align-items-center">
+    <h5 class="mb-0">
+        <img src="{{album_img}}" class="rounded mr-3" title="{{album}}"
+            height="40">{{name}}<small> - {{artist}}</small>
+    </h5>
+    <button type="button" class="btn-play-sm"
+        onclick="window.open('{{url}}', '_blank')">
+        <svg width="1em" height="1em" viewBox="0 0 16 16"
+            style="margin-left: 2.5px !important; margin-bottom: 4.5px !important;" class="bi bi-play-fill"
+            fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                d="M11.596 8.697l-6.363 3.692c-.54.313-1.233-.066-1.233-.697V4.308c0-.63.692-1.01 1.233-.696l6.363 3.692a.802.802 0 0 1 0 1.393z">
+            </path>
+        </svg>
+    </button>
+</li>`;
 
         String.prototype.render = function (args) {
             var reg = "";

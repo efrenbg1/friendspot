@@ -20,7 +20,7 @@ def register():
     url += "&response_type=code"
     url += "&redirect_uri=http%3A%2F%2Flocalhost%2Fcallback"
     #url += "&state=code"
-    url += "&scope=user-read-recently-played%20user-read-currently-playing%20user-read-email"
+    url += "&scope=user-read-recently-played%20user-read-currently-playing%20user-read-email%20user-library-read"
     return redirect(url)
 
 
@@ -39,7 +39,17 @@ def home():
 
 @app.route('/listening')
 def listening():
-    return spotify.get_playing(None)
+    return json.dumps(spotify.get_friends_listening(None))
+
+
+@app.route('/history')
+def history():
+    return json.dumps(spotify.get_history(1))
+
+
+@app.route('/songs')
+def songs():
+    return json.dumps(spotify.get_songs(1))
 
 
 @app.route('/<path:path>')
