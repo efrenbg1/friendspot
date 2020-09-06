@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
+        integrity="sha384-JcKb8q3iqJ61gNV9KGb8thSsNjpSL0n8PARn9HuZOnIxN0hoP+VmmDGMN5t9UJ0Z" crossorigin="anonymous">
+
+    <title>Friends' spot</title>
+    <style>
+        body {
+            background-image: linear-gradient(to bottom right, #1ED760, #1DB954);
+            min-height: 100vh;
+        }
+
+        .crop {
+            width: 90px;
+            height: 90px;
+            overflow: hidden;
+        }
+
+        .crop img {
+            width: 90px;
+            height: 90px;
+            margin: -355px 0 0 -510px;
+        }
+
+        .btn-play {
+            color: #fff;
+            background-color: #1db954;
+            border-radius: 500px;
+            height: 56px !important;
+            width: 56px !important;
+            font-size: 28px;
+            border-width: 0px;
+        }
+
+        .btn-play:focus {
+            outline: 0;
+        }
+
+        .bi-headphones {
+            animation: spin 4s ease infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            40% {
+                transform: rotate(0deg);
+            }
+
+            60% {
+                transform: rotate(360deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="row my-1" id="grid">
+        </div>
+    </div>
+
+    <!-- Optional JavaScript -->
+    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"
+        integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj"
+        crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"
+        integrity="sha384-9/reFTGAW83EW2RDu2S0VKaIzap3H66lZH81PoYlFhbGU+6BZp6G7niu735Sk7lN"
+        crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"
+        integrity="sha384-B4gt1jrGC7Jh4AgTPSdUtOBvfO8shuf57BaghqFfPlYxofvL8/KUEfYiJOMMV+rV"
+        crossorigin="anonymous"></script>
+    <script>
+        function playing() {
+            let req = new XMLHttpRequest();
+            var url = '/listening';
+            req.open('GET', url, true);
+            req.responseType = 'json';
+            req.onreadystatechange = function () {
+                if (req.readyState == 4) {
+                    if (req.status == 200) {
+                        var r = req.response;
+                        r.state_img = r.is_playing ? playing : pause;
+                        r.state = r.is_playing ? 'Listening right now' : 'On pause';
+                        console.log(req.status, r)
+                        document.getElementById('grid').innerHTML = card.render(r);
+                    } else {
+                        console.log(req.status);
+                    }
+                }
+            }.bind(this);
+            req.send();
+        }
+
+        playing();
+
+
+        var card = `<div class="card mx-2 my-1" style="width: 100%;">
+    <div class="card-body">
+        <div class="row d-flex justify-content-between">
+            <div class="col-sm-2 justify-content-center my-2">
+                <img src="{{album_img}}"
+                    class="rounded mx-auto d-block" title="{{album}}">
+            </div>
+            <div class="col-sm-8 mt-1">
+                <div class="row mx-1">
+                    <a class="h5 card-subtitle text-muted mt-2" href="{{user_url}}" target="_blank">
+                        <img src="{{user_img}}" style="height: 1.2em;">
+                        {{user}}
+                    </a>
+                </div>
+                <div class="row mx-1">
+                    <h5 class="card-title mb-3 mt-1" title="{{state}}">
+                        {{state_img}}
+                        {{name}}<small> - {{artist}}</small>
+                    </h5>
+                </div>
+            </div>
+            <div class="col-sm-2 mt-2 d-flex justify-content-center p-0">
+                <button type="button" class="btn-play mt-2"
+                    onclick="window.open('{{url}}', '_blank')">
+                    <svg width="1em" height="1em" viewBox="0 0 16 16"
+                        style="margin-left: 2px !important; margin-bottom: 6.5px !important;"
+                        class="bi bi-play-fill" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                        <path
+                            d="M11.596 8.697l-6.363 3.692c-.54.313-1.233-.066-1.233-.697V4.308c0-.63.692-1.01 1.233-.696l6.363 3.692a.802.802 0 0 1 0 1.393z" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>`;
+
+        var playing = `<svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-headphones mb-1" fill="currentColor"
+    xmlns="http://www.w3.org/2000/svg">
+    <path fill-rule="evenodd" d="M8 3a5 5 0 0 0-5 5v4.5H2V8a6 6 0 1 1 12 0v4.5h-1V8a5 5 0 0 0-5-5z" />
+    <path
+        d="M11 10a1 1 0 0 1 1-1h2v4a1 1 0 0 1-1 1h-1a1 1 0 0 1-1-1v-3zm-6 0a1 1 0 0 0-1-1H2v4a1 1 0 0 0 1 1h1a1 1 0 0 0 1-1v-3z" />
+</svg>`;
+
+        var pause = `<svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-pause-fill mb-1" fill="currentColor"
+    xmlns="http://www.w3.org/2000/svg">
+    <path
+        d="M5.5 3.5A1.5 1.5 0 0 1 7 5v6a1.5 1.5 0 0 1-3 0V5a1.5 1.5 0 0 1 1.5-1.5zm5 0A1.5 1.5 0 0 1 12 5v6a1.5 1.5 0 0 1-3 0V5a1.5 1.5 0 0 1 1.5-1.5z" />
+</svg>`;
+
+        String.prototype.render = function (args) {
+            var reg = "";
+            Object.keys(args).forEach(n => {
+                reg += (reg != "" ? "|" : "") + "{{" + n + "}}";
+            });
+            var re = new RegExp(reg, "gi");
+            return this.replace(re, function (match) {
+                var str = args[match.substring(2, match.length - 2)];
+                return str != null ? str : "";
+            });
+        };
+    </script>
+</body>
+
+</html>
