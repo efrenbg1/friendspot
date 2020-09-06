@@ -19,7 +19,6 @@ def register():
     url += "?client_id=9aeff168956d4c5e9b0cfa1c246d10dd"
     url += "&response_type=code"
     url += "&redirect_uri=http%3A%2F%2Flocalhost%2Fcallback"
-    #url += "&state=code"
     url += "&scope=user-read-recently-played%20user-read-currently-playing%20user-read-email%20user-library-read"
     return redirect(url)
 
