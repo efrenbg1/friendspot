@@ -27,7 +27,7 @@ self.addEventListener('fetch', event => {
 
 <head>
     <meta charset=UTF-8>
-    <title>Gestión - Sin Internet</title>
+    <title>Friends' spot</title>
     <meta name=viewport content="width=device-width, initial-scale=1, shrink-to-fit=no">
 </head>
 
