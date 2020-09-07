@@ -29,6 +29,10 @@
             margin: -355px 0 0 -510px;
         }
 
+        .btn-light {
+            border-color: #5A6268 !important;
+        }
+
         .btn-play {
             color: #fff;
             background-color: #1db954;
@@ -60,6 +64,11 @@
 
         .bi-headphones {
             animation: spin 4s ease infinite;
+        }
+
+        .logotron {
+            animation: spin 4s ease infinite;
+            display: inline-block;
         }
 
         @keyframes spin {
@@ -132,6 +141,7 @@
             req('/listening', function (status, response) {
                 if (status == 200) {
                     var html = "";
+                    if (!response.length) html = login
                     response.forEach((r) => {
                         r.state_img = r.is_playing ? playing : pause;
                         r.state = r.is_playing ? 'Listening right now' : 'On pause';
@@ -184,6 +194,52 @@
             });
         }
 
+
+        var login = `<div class="col-sm">
+    <div class="jumbotron my-4">
+        <h1 class="display-4"><span class="logotron">🎧</span> Friends' spot</h1>
+        <p class="lead">~ See what your friends are listening to. Anywhere, anytime ~</p>
+        <div class="text-center mt-5">
+            <p class="mb-2">Log in with:</p>
+            <button type="button" class="btn btn-light" onclick="location.href = '/register'">
+                <img src="img/spotify.svg" height="40" class="mb-1">
+            </button>
+        </div>
+        <hr class="mb-4 mt-5">
+            <h5>🤔 Why:</h5>
+            <p>
+                Spotify on 📱 does not support friends list. This app just fixes it but also adds many things 🥳!
+            </p>
+            <br>
+            <h5>🕵️ Security:</h5>
+            <p>
+                &rarr; Somewhere in the middle of the 🌍 this app stores only your <b>username</b>. 
+            </p>
+            <p>
+                &rarr; You have the right to completely 🗑 all your data. Just click on the <a href="javascript:" class="text-danger">Delete this account</a>
+            </p>
+            <p>
+                &rarr; Your profile is 🔐 as it requires your username + code to follow you. (Spotify is way less private 🤔) 
+            </p>
+            <br>
+            <h5>📄 Source:</h5>
+            <p>All the source code can be found under my <a
+                    href="https://github.com/efrenbg1/friendspot">GitHub repository</a>:</p>
+            <img src="img/socialcoding.jpg" class="rounded mx-auto d-block mb-3" height="150"
+                onclick="window.open('https://github.com/efrenbg1/friendspot', '_blank')">
+            <br>
+            <h5>☠️ Licence:</h5>
+            <p>
+                Copyright © 2020 Efrén Boyarizo <a href="mailto:efren@boyarizo.es"
+                    target="_blank">efren@boyarizo.es</a>
+                <br>
+                This work is free. You can redistribute it and/or modify it under the terms of the Do
+                What The Fuck You Want To Public License, Version 2, as published by Sam Hocevar. See
+                <a href="http://www.wtfpl.net/" target="_blank">http://www.wtfpl.net/</a> for more
+                details.
+            </p>
+    </div>
+</div>`;
 
         var card = `<div class="card mx-2 my-1" style="width: 100%;">
     <div class="card-body">

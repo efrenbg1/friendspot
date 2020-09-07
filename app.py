@@ -9,8 +9,8 @@ app = Flask(__name__)
 
 
 @app.route('/')
-def index():
-    return '<a href="/register">Registrarse</a><br><a href="/home">Inicio</a>'
+def home():
+    return send_from_directory('static/', 'index.html')
 
 
 @app.route('/register')
@@ -29,11 +29,6 @@ def callback():
     if spotify.register_user(code):
         return redirect('/home')
     return "Error"
-
-
-@app.route('/home')
-def home():
-    return send_from_directory('static/', 'index.html')
 
 
 @app.route('/listening')
@@ -58,6 +53,11 @@ def static_files(path):
 
 @app.route('/index.html')
 def redirectNoFile():
+    return redirect('/')
+
+
+@app.errorhandler(404)
+def not_found(e):
     return redirect('/')
 
 

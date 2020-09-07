@@ -1,38 +1,38 @@
-import pymysql as mysql
-from DBUtils.PooledDB import PooledDB
+import sqlite3
+from threading import Lock
+import time
 
-db = PooledDB(creator=mysql, user="web", password="Edilizia5!",
-              host="192.168.0.3", database="friendspot")
+db = sqlite3.connect('friendspot.db', check_same_thread=False)
+ldb = Lock()
+
+cursor = db.cursor()
+cursor.execute("CREATE TABLE IF NOT EXISTS user (id integer PRIMARY KEY, username text NOT NULL, name text NOT NULL, url text NOT NULL, img text NOT NULL, session text NOT NULL, access text NOT NULL, refresh text NOT NULL, valid int NOT NULL);")
+cursor.execute("CREATE TABLE IF NOT EXISTS friends (user integer NOT NULL, friend integer NOT NULL, FOREIGN KEY (user) REFERENCES user(id), FOREIGN KEY (friend) REFERENCES user(id));")
+db.commit()
 
 
 def query(sql, *param):
-    conn = db.connection()
-    cursor = conn.cursor()
-    cursor.execute(sql, param)
-    result = cursor.fetchall()
-    conn.commit()
-    if result is None:
-        raise Exception("Error fetching query result: is of None type")
-    return result
+    with ldb:
+        cursor = db.cursor()
+        cursor.execute(sql, param)
+        result = cursor.fetchall()
+        db.commit()
+        return result
 
 
 def queryone(sql, *param):
-    conn = db.connection()
-    cursor = conn.cursor()
-    cursor.execute(sql, param)
-    result = cursor.fetchone()
-    conn.commit()
-    if result is None:
-        raise Exception("Error fetching query result: is of None type")
-    return result
+    with ldb:
+        cursor = db.cursor()
+        cursor.execute(sql, param)
+        result = cursor.fetchone()
+        db.commit()
+        return result
 
 
 def insert(sql, *param):
-    conn = db.connection()
-    cursor = conn.cursor()
-    cursor.execute(sql, param)
-    id = cursor.lastrowid
-    conn.commit()
-    if id is None:
-        raise Exception("Insert id returned None")
-    return id
+    with ldb:
+        cursor = db.cursor()
+        cursor.execute(sql, param)
+        id = cursor.lastrowid
+        db.commit()
+        return id

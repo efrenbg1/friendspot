@@ -44,14 +44,14 @@ def register_user(code):
     else:
         img = None
 
-    ddbb.query("UPDATE user SET username=%s, name=%s, url=%s, img=%s, access=%s, refresh=%s, valid=NOW() WHERE id=1",
-               username, name, url, img, access, refresh)
+    ddbb.query("UPDATE user SET username=?, name=?, url=?, img=?, access=?, refresh=?, valid=? WHERE id=1",
+               username, name, url, img, access, refresh, time.time())
     return True
 
 
 def get_friends(user):
     q = ddbb.query(
-        "SELECT id, name, url, img, access, refresh, valid FROM user WHERE id IN (SELECT friend FROM friends WHERE user=%s)", user)
+        "SELECT id, name, url, img, access, refresh, valid FROM user WHERE id IN (SELECT friend FROM friends WHERE user=?)", user)
 
     if not len(q):
         return []
@@ -71,7 +71,7 @@ def get_friends(user):
             if r.status_code == 200:
                 token = json.loads(r.text).get('access_token')
                 ddbb.query(
-                    "UPDATE user SET access=%s, valid=NOW() WHERE id=%s", token, friend[0])
+                    "UPDATE user SET access=?, valid=NOW() WHERE id=?", token, friend[0])
             else:
                 continue
         friends.append({
@@ -119,7 +119,7 @@ def get_friends_listening(user):
 
 def get_history(user):
     q = ddbb.queryone(
-        "SELECT name, url, img, access, refresh, valid FROM user WHERE id=%s", user)
+        "SELECT name, url, img, access, refresh, valid FROM user WHERE id=?", user)
 
     if not len(q):
         return None
@@ -136,7 +136,7 @@ def get_history(user):
         if r.status_code == 200:
             token = json.loads(r.text).get('access_token')
             ddbb.query(
-                "UPDATE user SET access=%s, valid=NOW() WHERE id=%s", token, user)
+                "UPDATE user SET access=?, valid=NOW() WHERE id=?", token, user)
         else:
             return None
 
@@ -168,7 +168,7 @@ def get_history(user):
 
 def get_songs(user):
     q = ddbb.queryone(
-        "SELECT name, url, img, access, refresh, valid FROM user WHERE id=%s", user)
+        "SELECT name, url, img, access, refresh, valid FROM user WHERE id=?", user)
 
     if not len(q):
         return None
@@ -185,7 +185,7 @@ def get_songs(user):
         if r.status_code == 200:
             token = json.loads(r.text).get('access_token')
             ddbb.query(
-                "UPDATE user SET access=%s, valid=NOW() WHERE id=%s", token, user)
+                "UPDATE user SET access=?, valid=NOW() WHERE id=?", token, user)
         else:
             return None
 
