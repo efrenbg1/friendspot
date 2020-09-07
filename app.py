@@ -1,11 +1,14 @@
-from flask import Flask, request, redirect, send_from_directory
+from flask import Flask, request, redirect, send_from_directory, make_response
 import ddbb
 import spotify
 import requests
 import json
 import time
+import datetime
 
 app = Flask(__name__)
+
+domain = "localhost"
 
 
 @app.route('/')
@@ -18,32 +21,113 @@ def register():
     url = "https://accounts.spotify.com/authorize"
     url += "?client_id=9aeff168956d4c5e9b0cfa1c246d10dd"
     url += "&response_type=code"
-    url += "&redirect_uri=http%3A%2F%2Flocalhost%2Fcallback"
-    url += "&scope=user-read-recently-played%20user-read-currently-playing%20user-read-email%20user-library-read"
+    url += "&redirect_uri=http%3A%2F%2F{}%2Fcallback".format(domain)
+    url += "&scope=user-read-recently-played%20user-read-currently-playing%20user-library-read"
     return redirect(url)
 
 
 @app.route('/callback')
 def callback():
     code = request.args.get('code')
-    if spotify.register_user(code):
-        return redirect('/home')
-    return "Error"
+    user = spotify.register_user(code)
+    if user:
+        response = make_response(redirect('/'))
+        expires = datetime.datetime.now() + datetime.timedelta(days=15)
+        response.set_cookie('id', str(user[0]), expires=expires)
+        response.set_cookie('username', user[1], expires=expires)
+        response.set_cookie('url', user[2], expires=expires)
+        response.set_cookie('img', user[3], expires=expires)
+        response.set_cookie('session', user[4], expires=expires)
+        return response
+    return redirect('/?error')
 
 
 @app.route('/listening')
 def listening():
-    return json.dumps(spotify.get_friends_listening(None))
+    if not spotify.check_user():
+        return "401 (Unauthorized)", 401
+
+    user = request.cookies.get('id')
+
+    return json.dumps(spotify.get_friends_listening(user))
 
 
 @app.route('/history')
 def history():
-    return json.dumps(spotify.get_history(1))
+    if not spotify.check_user():
+        return "401 (Unauthorized)", 401
+
+    user = request.cookies.get('id')
+    id = request.args.get('id')
+    if id == None:
+        return "400 (Bad Request)", 400
+    if not id.isdigit():
+        return "400 (Bad Request)", 400
+
+    q = ddbb.query("SELECT * FROM friends WHERE user=? AND friend=?", user, id)
+
+    if not len(q):
+        return "400 (Bad Request)", 400
+
+    return json.dumps(spotify.get_history(id))
 
 
 @app.route('/songs')
 def songs():
-    return json.dumps(spotify.get_songs(1))
+    if not spotify.check_user():
+        return "401 (Unauthorized)", 401
+
+    user = request.cookies.get('id')
+    id = request.args.get('id')
+    if id == None:
+        return "400 (Bad Request)", 400
+    if not id.isdigit():
+        return "400 (Bad Request)", 400
+
+    q = ddbb.query("SELECT * FROM friends WHERE user=? AND friend=?", user, id)
+
+    if not len(q):
+        return "400 (Bad Request)", 400
+
+    return json.dumps(spotify.get_songs(id))
+
+
+@app.route('/friend')
+def friend():
+    if not spotify.check_user():
+        return "401 (Unauthorized)", 401
+
+    user = request.cookies.get('id')
+    username = request.args.get('username')
+    id = request.args.get('id')
+
+    if username == None or id == None:
+        return "400 (Bad Request)", 400
+    if len(username) > 50 or len(id) > 50 or not id.isdigit():
+        return "400 (Bad Request)", 400
+
+    return json.dumps({
+        'done': spotify.add_friend(user, username, int(id))
+    })
+
+
+@app.route('/unfriend')
+def unfriend():
+    if not spotify.check_user():
+        return "401 (Unauthorized)", 401
+
+    user = request.cookies.get('id')
+    id = request.args.get('id')
+    if id == None:
+        return "400 (Bad Request)", 400
+    if not id.isdigit():
+        return "400 (Bad Request)", 400
+
+    ddbb.query("DELETE FROM friends WHERE user=? AND friend=?", user, id)
+
+    return json.dumps({
+        'done': True
+    })
 
 
 @app.route('/<path:path>')

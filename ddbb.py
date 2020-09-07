@@ -6,7 +6,7 @@ db = sqlite3.connect('friendspot.db', check_same_thread=False)
 ldb = Lock()
 
 cursor = db.cursor()
-cursor.execute("CREATE TABLE IF NOT EXISTS user (id integer PRIMARY KEY, username text NOT NULL, name text NOT NULL, url text NOT NULL, img text NOT NULL, session text NOT NULL, access text NOT NULL, refresh text NOT NULL, valid int NOT NULL);")
+cursor.execute("CREATE TABLE IF NOT EXISTS user (id integer PRIMARY KEY NOT NULL, username text NOT NULL, name text NOT NULL, url text NOT NULL, img text NOT NULL, session text NOT NULL, access text NOT NULL, refresh text NOT NULL, valid int NOT NULL);")
 cursor.execute("CREATE TABLE IF NOT EXISTS friends (user integer NOT NULL, friend integer NOT NULL, FOREIGN KEY (user) REFERENCES user(id), FOREIGN KEY (friend) REFERENCES user(id));")
 db.commit()
 

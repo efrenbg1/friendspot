@@ -7,7 +7,7 @@ from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 from livereload import Server
 
-command = ["python3", "app.py"]
+command = ["python", "app.py"]
 
 app = subprocess.Popen(command)
 
@@ -39,5 +39,4 @@ observer.start()
 
 server = Server()
 server.watch('static/index.html', delay=2)
-server.watch('static/index.js', delay=2)
 server.serve(liveport=35729, debug=False)
