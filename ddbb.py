@@ -2,6 +2,20 @@ import sqlite3
 from threading import Lock
 import time
 import os
+from base64 import b64encode
+import json
+
+settings = "/etc/friendspot/settings.json"
+if not os.path.isfile(settings):
+    settings = "settings.json"
+
+with open(settings) as f:
+    settings = json.loads(f.read())
+    client_id = settings.get('client_id')
+    auth = client_id + ":" + settings.get('client_secret')
+    auth = b64encode(auth.encode('utf-8')).decode('utf-8')
+    redirect_uri = settings.get('redirect_uri')
+
 
 db = "/etc/friendspot/friendspot.db"
 if not os.path.isfile(db):

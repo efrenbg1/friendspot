@@ -2,27 +2,14 @@ from flask import Flask, request, redirect, send_from_directory, make_response
 import ddbb
 import spotify
 import requests
-import json
 import time
 import datetime
 import urllib
-import os
-from base64 import b64encode
+import json
 
 # TODO fix buttons and add titles
 
 app = Flask(__name__)
-
-settings = "/etc/friendspot/settings.json"
-if not os.path.isfile(settings):
-    settings = "settings.json"
-
-with open(settings) as f:
-    settings = json.loads(f.read())
-    app.client_id = settings.get('client_id')
-    app.auth = app.client_id + ":" + settings.get('client_secret')
-    app.auth = b64encode(app.auth.encode('utf-8')).decode('utf-8')
-    app.redirect_uri = settings.get('redirect_uri')
 
 
 @app.route('/')
@@ -33,9 +20,9 @@ def home():
 @app.route('/register')
 def register():
     url = "https://accounts.spotify.com/authorize"
-    url += "?client_id=" + app.client_id
+    url += "?client_id=" + ddbb.client_id
     url += "&response_type=code"
-    url += "&redirect_uri=" + urllib.parse.quote(app.redirect_uri, safe='')
+    url += "&redirect_uri=" + urllib.parse.quote(ddbb.redirect_uri, safe='')
     url += "&scope=user-read-recently-played%20user-read-currently-playing%20user-library-read"
     return redirect(url)
 

@@ -15,9 +15,9 @@ def register_user(code):
     r = requests.post("https://accounts.spotify.com/api/token", data={
         "grant_type": "authorization_code",
         "code": code,
-        "redirect_uri": app.redirect_uri
+        "redirect_uri": ddbb.redirect_uri
     }, headers={
-        "Authorization": "Basic " + app.auth
+        "Authorization": "Basic " + ddbb.auth
     })
 
     if r.status_code != 200:
@@ -77,7 +77,7 @@ def get_friends(user):
                 "grant_type": "refresh_token",
                 "refresh_token": friend[5],
             }, headers={
-                "Authorization": "Basic " + app.auth
+                "Authorization": "Basic " + ddbb.auth
             })
 
             if r.status_code == 200:
@@ -148,7 +148,7 @@ def get_history(user):
             "grant_type": "refresh_token",
             "refresh_token": q[4],
         }, headers={
-            "Authorization": "Basic " + app.auth
+            "Authorization": "Basic " + ddbb.auth
         })
 
         if r.status_code == 200:
@@ -197,7 +197,7 @@ def get_songs(user):
             "grant_type": "refresh_token",
             "refresh_token": q[4],
         }, headers={
-            "Authorization": "Basic " + app.auth
+            "Authorization": "Basic " + ddbb.auth
         })
 
         if r.status_code == 200:
