@@ -1,13 +1,11 @@
 from flask import request
+from app import app
 import ddbb
 import requests
 import json
 import time
 import string
 import random
-
-with open('secret') as f:
-    secret = f.read()
 
 
 def register_user(code):
@@ -17,9 +15,9 @@ def register_user(code):
     r = requests.post("https://accounts.spotify.com/api/token", data={
         "grant_type": "authorization_code",
         "code": code,
-        "redirect_uri": "http://localhost/callback"
+        "redirect_uri": app.redirect_uri
     }, headers={
-        "Authorization": "Basic " + secret
+        "Authorization": "Basic " + app.auth
     })
 
     if r.status_code != 200:
@@ -79,13 +77,13 @@ def get_friends(user):
                 "grant_type": "refresh_token",
                 "refresh_token": friend[5],
             }, headers={
-                "Authorization": "Basic " + secret
+                "Authorization": "Basic " + app.auth
             })
 
             if r.status_code == 200:
                 token = json.loads(r.text).get('access_token')
                 ddbb.query(
-                    "UPDATE user SET access=?, valid=NOW() WHERE id=?", token, friend[0])
+                    "UPDATE user SET access=?, valid=? WHERE id=?", token, time.time(), friend[0])
             else:
                 continue
         friends.append({
@@ -150,13 +148,13 @@ def get_history(user):
             "grant_type": "refresh_token",
             "refresh_token": q[4],
         }, headers={
-            "Authorization": "Basic " + secret
+            "Authorization": "Basic " + app.auth
         })
 
         if r.status_code == 200:
             token = json.loads(r.text).get('access_token')
             ddbb.query(
-                "UPDATE user SET access=?, valid=NOW() WHERE id=?", token, user)
+                "UPDATE user SET access=?, valid= WHERE id=?", token, user)
         else:
             return None
 
@@ -199,13 +197,13 @@ def get_songs(user):
             "grant_type": "refresh_token",
             "refresh_token": q[4],
         }, headers={
-            "Authorization": "Basic " + secret
+            "Authorization": "Basic " + app.auth
         })
 
         if r.status_code == 200:
             token = json.loads(r.text).get('access_token')
             ddbb.query(
-                "UPDATE user SET access=?, valid=NOW() WHERE id=?", token, user)
+                "UPDATE user SET access=?, valid=? WHERE id=?", token, time.time(), user)
         else:
             return None
 

@@ -1,8 +1,12 @@
 import sqlite3
 from threading import Lock
 import time
+import os
 
-db = sqlite3.connect('friendspot.db', check_same_thread=False)
+db = "/etc/friendspot/friendspot.db"
+if not os.path.isfile(db):
+    db = "friendspot.db"
+db = sqlite3.connect(db, check_same_thread=False)
 ldb = Lock()
 
 cursor = db.cursor()

@@ -39,4 +39,5 @@ observer.start()
 
 server = Server()
 server.watch('static/index.html', delay=2)
+server.watch('static/js/index.js', delay=2)
 server.serve(liveport=35729, debug=False)
