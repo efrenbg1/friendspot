@@ -250,14 +250,14 @@ def add_friend(user, username, id):
 
 def check_user():
     id = request.cookies.get('id')
-    name = request.cookies.get('username')
+    username = request.cookies.get('username')
     session = request.cookies.get('session')
-    if not isinstance(id, str) or not isinstance(name, str) or not isinstance(session, str):
+    if not isinstance(id, str) or not isinstance(username, str) or not isinstance(session, str):
         return False
-    if len(id) > 10 or len(name) > 50 or len(session) > 150:
+    if len(id) > 10 or len(username) > 50 or len(session) > 150:
         return False
     q = ddbb.queryone(
-        "SELECT id FROM user WHERE id=? AND name=? AND session=?", id, name, session)
+        "SELECT id FROM user WHERE id=? AND username=? AND session=?", id, username, session)
     if q != None and str(q[0]) == id:
         return True
     return False
